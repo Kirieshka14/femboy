@@ -186,7 +186,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("*слушает внимательно* Мне интересно всё, что ты говоришь... Расскажи ещё ❤️", parse_mode="Markdown")
 
-# ===== АВТОРАССЫЛКА =====
+# ===== ФОНОВАЯ ЗАДАЧА (через asyncio.create_task) =====
 async def auto_sender(app):
     while True:
         now = datetime.now()
@@ -210,8 +210,8 @@ async def auto_sender(app):
             await asyncio.sleep(60)
         await asyncio.sleep(30)
 
-# ===== ЗАПУСК (ФИНАЛЬНАЯ ВЕРСИЯ) =====
-async def main():
+# ===== ЗАПУСК (ПРОСТОЙ И РАБОЧИЙ) =====
+def main():
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("girl", set_girl))
@@ -223,10 +223,11 @@ async def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     # Запускаем авторассылку в фоне
-    asyncio.create_task(auto_sender(app))
+    loop = asyncio.get_event_loop()
+    loop.create_task(auto_sender(app))
 
     print("✅ Фембойчик запущен. Пол, доверие, авторассылка — всё работает.")
-    await app.run_polling()
+    app.run_polling()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
