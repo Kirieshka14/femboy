@@ -6,8 +6,8 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 # ===== НАСТРОЙКИ =====
-TOKEN = "8483342131:AAHJXJsgfeY2PJJNRuGMT4xiVffnAj9XHzs"
-YOUR_USER_ID = 123456789  # 7968128384
+TOKEN = "8483342131:AAEI7X0IxLgLHK4n6UhSTVG_RizXKqnOYmY"
+YOUR_USER_ID = 7968128384
 
 # ===== БАЗА ДАННЫХ =====
 conn = sqlite3.connect('femboy_love.db')
@@ -75,7 +75,7 @@ def get_all_users():
     cursor.execute('SELECT user_id FROM users')
     return [row[0] for row in cursor.fetchall()]
 
-# ===== ФРАЗЫ В ЗАВИСИМОСТИ ОТ ПОЛА =====
+# ===== ФРАЗЫ =====
 def get_flirt(trust, name, gender):
     if gender == "девушка":
         if trust < 20:
@@ -86,7 +86,7 @@ def get_flirt(trust, name, gender):
             return f"*прижимается щекой* Твои волосы так вкусно пахнут... *целует в плечо*"
         else:
             return f"*смотрит с желанием* Я хочу быть только твоим... *тянется к губам*"
-    else:  # парень
+    else:
         if trust < 20:
             return f"*игриво* Привет, {name}... Ты сегодня такой классный *улыбается*"
         elif trust < 50:
@@ -101,7 +101,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     name = user.first_name
     set_user(user.id, name)
-    
     await update.message.reply_text(
         "— Вы мой новый хозяин..?\n\n"
         "*Фембойчик опускает глаза, теребит край рубашки.*\n\n"
@@ -171,14 +170,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     name = update.effective_user.first_name
     text = update.message.text.lower()
     data = get_user(user_id)
-    
     if not data or not data["gender"]:
         await update.message.reply_text("Напиши /girl или /boy, чтобы я понял, кто ты ❤️")
         return
-    
     trust = data["trust"]
     gender = data["gender"]
-    
     if "привет" in text:
         await update.message.reply_text(get_flirt(trust, name, gender), parse_mode="Markdown")
     elif "как дела" in text:
@@ -214,8 +210,8 @@ async def auto_sender(app):
             await asyncio.sleep(60)
         await asyncio.sleep(30)
 
-# ===== ЗАПУСК =====
-def main():
+# ===== ЗАПУСК (ФИНАЛЬНАЯ ВЕРСИЯ) =====
+async def main():
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("girl", set_girl))
@@ -226,11 +222,11 @@ def main():
     app.add_handler(CommandHandler("trust", trust_cmd))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    loop = asyncio.get_event_loop()
-    loop.create_task(auto_sender(app))
+    # Запускаем авторассылку в фоне
+    asyncio.create_task(auto_sender(app))
 
     print("✅ Фембойчик запущен. Пол, доверие, авторассылка — всё работает.")
-    app.run_polling()
+    await app.run_polling()
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
